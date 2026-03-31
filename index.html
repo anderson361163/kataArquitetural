@@ -1,0 +1,94 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500&display=swap');
+  .slot-app { font-family: 'IBM Plex Sans', sans-serif; padding: 8px 0 24px; }
+  .slot-title { text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: var(--color-text-primary); margin: 0 0 4px; }
+  .slot-sub { text-align: center; font-size: 12px; color: var(--color-text-tertiary); margin: 0 0 24px; letter-spacing: 1px; text-transform: uppercase; }
+  .machine { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: 16px; padding: 24px 20px 20px; max-width: 520px; margin: 0 auto; }
+  .reels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .reel-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .reel-tag { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; padding: 4px 0; border-radius: 4px; }
+  .tag-dom { background: #E6F1FB; color: #185FA5; }
+  .tag-esc { background: #EAF3DE; color: #3B6D11; }
+  .tag-req { background: #FAEEDA; color: #854F0B; }
+  .reel-window { height: 100px; overflow: hidden; border-radius: 8px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); position: relative; }
+  .reel-inner { display: flex; flex-direction: column; transition: transform 0s; }
+  .reel-item { height: 100px; display: flex; align-items: center; justify-content: center; padding: 8px; text-align: center; font-size: 12px; font-weight: 500; color: var(--color-text-primary); line-height: 1.4; flex-shrink: 0; }
+  .spin-btn { display: block; width: 100%; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: 10px; color: var(--color-text-primary); font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 3px; padding: 14px; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .spin-btn:hover { background: var(--color-background-secondary); }
+  .spin-btn:active { transform: scale(0.98); }
+  .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .result-label { text-align: center; font-size: 11px; color: var(--color-text-tertiary); margin-top: 10px; letter-spacing: 1px; }
+  .winner-flash { animation: flash 0.4s ease-out; }
+  @keyframes flash { 0%{background: #FAEEDA;} 100%{background: var(--color-background-secondary);} }
+</style>
+<div class="slot-app">
+  <div class="slot-title">Kata Arquitetural</div>
+  <div class="slot-sub">Rinha Edition</div>
+  <div class="machine">
+    <div class="reels">
+      <div class="reel-wrap">
+        <div class="reel-tag tag-dom">Domínio</div>
+        <div class="reel-window"><div class="reel-inner" id="reel0"></div></div>
+      </div>
+      <div class="reel-wrap">
+        <div class="reel-tag tag-esc">Escala</div>
+        <div class="reel-window"><div class="reel-inner" id="reel1"></div></div>
+      </div>
+      <div class="reel-wrap">
+        <div class="reel-tag tag-req">Requisitos</div>
+        <div class="reel-window"><div class="reel-inner" id="reel2"></div></div>
+      </div>
+    </div>
+    <button class="spin-btn" id="spinBtn" onclick="spin()">▶  GIRAR</button>
+    <div class="result-label" id="spinLabel">Pressione para girar</div>
+  </div>
+</div>
+<script>
+const DS=[["E-commerce de moda","Marketplace B2B","Banco digital","Fintech de crédito","App de delivery","Streaming","SaaS de RH","Rede social","App de saúde","Plataforma EAD","Logística","Exchange cripto"],
+["500K usuários · 50K req/min","2M usuários · +30%/mês","10M globais · Black Friday 10x","100K premium · baixa latência","5M usuários · 1M transações/dia","50K empresas · multi-tenant","300K · 80% mobile","20M · real-time WebSocket"],
+["< 200ms P99 · SLA 99.9%","99.99% disponível · RTO 30s","< 50ms P95 · LGPD","SLA 99.95% · Read-heavy","ACID + Auditoria total","At-least-once · Reprocess.","< 100ms · Eventual consist.","Multi-region failover"]];
+let spinning = false;
+let spinCount = 0;
+function buildReel(id, items){
+  const el = document.getElementById('reel'+id);
+  const all = [...items,...items,...items,...items];
+  el.innerHTML = all.map(t=>`<div class="reel-item">${t}</div>`).join('');
+  el.style.transform='translateY(0)';
+}
+DS.forEach((_,i)=>buildReel(i,DS[i]));
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+async function spinReel(reelEl, items, finalIdx, delay){
+  await sleep(delay);
+  const itemH=100;
+  const totalItems=items.length;
+  const cycles=2;
+  const targetPos = (totalItems*2+finalIdx)*itemH;
+  reelEl.style.transition='none';
+  reelEl.style.transform='translateY(0)';
+  await sleep(20);
+  reelEl.style.transition=`transform ${0.7+delay*0.0005}s cubic-bezier(0.17,0.67,0.3,1.0)`;
+  reelEl.style.transform=`translateY(-${targetPos}px)`;
+  await sleep(900+delay*0.5);
+  const win=reelEl.parentElement;
+  win.classList.add('winner-flash');
+  setTimeout(()=>win.classList.remove('winner-flash'),400);
+}
+async function spin(){
+  if(spinning)return;
+  spinning=true;
+  const btn=document.getElementById('spinBtn');
+  btn.disabled=true;
+  document.getElementById('spinLabel').textContent='Girando...';
+  const picks=DS.map(arr=>Math.floor(Math.random()*arr.length));
+  const reels=[document.getElementById('reel0'),document.getElementById('reel1'),document.getElementById('reel2')];
+  DS.forEach((_,i)=>buildReel(i,DS[i]));
+  await sleep(50);
+  await Promise.all(reels.map((r,i)=>spinReel(r,DS[i],picks[i],i*120)));
+  await sleep(200);
+  spinCount++;
+  document.getElementById('spinLabel').textContent=`Desafio #${spinCount} — boa sorte!`;
+  btn.disabled=false;
+  spinning=false;
+}
+</script>
